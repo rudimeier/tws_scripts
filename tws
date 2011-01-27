@@ -2,79 +2,90 @@
 
 
 
-_my_parse_cmd()
+_parse_cmd()
 {
 	local TEMP
-        TEMP=`getopt -o cp --long controller,patched,tws: -n "$0" -- "$@"` || return 1
-        eval set -- "$TEMP"
+	TEMP=$(getopt -o cp --long controller,patched,tws: -n "$0" -- "$@") \
+		|| return 1
+	eval set -- "$TEMP"
 
-        while true ; do
-                case "$1" in
-			-c|--controller) CONTROLLER="1" ; shift ;;
-			-p|--patched) PATCHED="1" ; shift ;;
-			--tws) IBJtsDIR="$(readlink -f "$2")" ; shift 2;;
-                        --) shift ; break ;;
-                        *) echo "Internal error!" ; exit 1 ;;
-                esac
-        done
+	while true ; do
+	case "$1" in
+		-c|--controller)
+			CONTROLLER="1"; shift;;
+		-p|--patched)
+			PATCHED="1"; shift;;
+		--tws)
+			TWS_DIR="$(readlink -f "$2")"; shift 2;;
+		--)
+			shift ; break ;;
+		*)
+			echo "$0: Internal error!" >&2; return 1;;
+		esac
+	done
 
-        #Remaining arguments:
+	#Remaining arguments:
 	if test "$#" -gt 1  ;then
 		echo "$0: bad usage" 2>&1
 		return 1
 	elif test "$#" -gt 0  ;then
-		TWSHOME="$1"
+		TWS_HOME="$1"
 	fi
 }
 
 
 
-
+# defaults
 CONTROLLER="0"
 PATCHED="0"
-TWSHOME="${HOME}/.tws"
-IBJtsDIR="/opt/TWS/IBJts"
+TWS_HOME="${HOME}/.tws"
+TWS_DIR="/opt/TWS/IBJts"
+IBController_DIR="/opt/TWS/IBController"
 
-if ! _my_parse_cmd "$@" ;then
+
+if ! _parse_cmd "$@" ;then
 	exit 1
 fi
+
+
 
 if [ "${PATCHED}" = 1 ] ;then
-	IBJtsDIR=${IBJtsDIR}-patched
+	TWS_DIR=${TWS_DIR}-patched
 fi
 
-if ! test -d  "${IBJtsDIR}" ;then
-	echo "$0: '${IBJtsDIR}' not found" >&2
+if ! test -d  "${TWS_DIR}" ;then
+	echo "$0: invalid TWS_DIR: '${TWS_DIR}'" >&2
 	exit 1
 fi
-if ! test -d  "${TWSHOME}" ;then
-	echo "$0: '${TWSHOME}' not found" >&2
+if ! test -d  "${TWS_HOME}" ;then
+	echo "$0: invalid TWS_HOME: '${TWS_HOME}'" >&2
 	exit 1
 fi
 
-cd "${TWSHOME}" || exit 1
+cd "${TWS_HOME}" || exit 1
 
 
 
 export CLASSPATH
-CLASSPATH=${IBJtsDIR}/include_patches:${IBJtsDIR}/jts:${CLASSPATH}
 #getting classpath
-for jarfile in ${IBJtsDIR}/*.jar ;do
+for jarfile in ${TWS_DIR}/*.jar ;do
      CLASSPATH="${CLASSPATH}:${jarfile}"
 done
+#add path to (eventually existing) patches
+CLASSPATH=${TWS_DIR}/include_patches:${TWS_DIR}/jts:${CLASSPATH}
 
 
 if [ "${CONTROLLER}" = 1 ] ;then
 	temp=""
 	if ! temp="$(sed '/^IbDir=\.\r\{0,1\}$/!d' IBController.ini 2>/dev/null)" ;then
-		echo "$0: ${TWSHOME}/IBController.ini not found" >&2;
+		echo "$0: ${TWS_HOME}/IBController.ini not found" >&2;
 		exit 1
 	fi
 	if test -z "${temp}" ;then
-		echo "$0: ${TWSHOME}/IBController.ini must contain 'IbDir=.'" >&2;
+		echo "$0: ${TWS_HOME}/IBController.ini must contain 'IbDir=.'" >&2;
 		exit 1
 	fi
-	CLASSPATH="/opt/TWS/IBController/IBController.jar:${CLASSPATH}"
+	CLASSPATH="${IBController_DIR}/IBController.jar:${CLASSPATH}"
 	exec java ibcontroller.IBController ./IBController.ini
 else
 	exec java jclient.LoginFrame .
