@@ -1,11 +1,17 @@
 #!/bin/bash
 
 
+_print_usage()
+{
+	cat <<EOF
+Usage: $0 [-p|--patched] [-c|--controller] [--tws TWS_DIR] [--test] [TWS_HOME]
+EOF
+}
 
 _parse_cmd()
 {
 	local TEMP
-	TEMP=$(getopt -o cp --long controller,patched,tws:,test -n "$0" -- "$@") \
+	TEMP=$(getopt -o cph --long controller,patched,tws:,test,help -n "$0" -- "$@") \
 		|| return 1
 	eval set -- "$TEMP"
 
@@ -19,6 +25,8 @@ _parse_cmd()
 			TWS_DIR="$(readlink -f "$2")"; shift 2;;
 		--test)
 			DRYRUN="1"; shift 1;;
+		--help)
+			_print_usage; exit 0;;
 		--)
 			shift ; break ;;
 		*)
@@ -35,7 +43,7 @@ _parse_cmd()
 	fi
 }
 
-_exec()
+_java_exec()
 {
 	if [ "${DRYRUN}" = "1" ] ;then
 		echo "CONTROLLER='${CONTROLLER}'"
@@ -44,9 +52,9 @@ _exec()
 		echo "TWS_DIR='${TWS_DIR}'"
 		echo "TWS_HOME='${TWS_HOME}'"
 		echo "CLASSPATH='${CLASSPATH}'"
-		echo "$@"
+		echo java -cp "${CLASSPATH}" "$@"
 	else
-		exec "$@"
+		exec java -cp "${CLASSPATH}" "$@"
 	fi
 }
 
@@ -103,7 +111,7 @@ if [ "${CONTROLLER}" = 1 ] ;then
 		exit 1
 	fi
 	CLASSPATH="${IBController_DIR}/IBController.jar:${CLASSPATH}"
-	_exec java -cp "${CLASSPATH}" ibcontroller.IBController ./IBController.ini
+	_java_exec ibcontroller.IBController ./IBController.ini
 else
-	_exec java -cp "${CLASSPATH}" jclient.LoginFrame .
+	_java_exec jclient.LoginFrame .
 fi
