@@ -1,0 +1,81 @@
+#!/bin/bash
+
+
+
+_my_parse_cmd()
+{
+	local TEMP
+        TEMP=`getopt -o cp --long controller,patched,tws: -n "$0" -- "$@"` || return 1
+        eval set -- "$TEMP"
+
+        while true ; do
+                case "$1" in
+			-c|--controller) CONTROLLER="1" ; shift ;;
+			-p|--patched) PATCHED="1" ; shift ;;
+			--tws) IBJtsDIR="$(readlink -f "$2")" ; shift 2;;
+                        --) shift ; break ;;
+                        *) echo "Internal error!" ; exit 1 ;;
+                esac
+        done
+
+        #Remaining arguments:
+	if test "$#" -gt 1  ;then
+		echo "$0: bad usage" 2>&1
+		return 1
+	elif test "$#" -gt 0  ;then
+		TWSHOME="$1"
+	fi
+}
+
+
+
+
+CONTROLLER="0"
+PATCHED="0"
+TWSHOME="${HOME}/.tws"
+IBJtsDIR="/opt/TWS/IBJts"
+
+if ! _my_parse_cmd "$@" ;then
+	exit 1
+fi
+
+if [ "${PATCHED}" = 1 ] ;then
+	IBJtsDIR=${IBJtsDIR}-patched
+fi
+
+if ! test -d  "${IBJtsDIR}" ;then
+	echo "$0: '${IBJtsDIR}' not found" >&2
+	exit 1
+fi
+if ! test -d  "${TWSHOME}" ;then
+	echo "$0: '${TWSHOME}' not found" >&2
+	exit 1
+fi
+
+cd "${TWSHOME}" || exit 1
+
+
+
+export CLASSPATH
+CLASSPATH=${IBJtsDIR}/include_patches:${IBJtsDIR}/jts:${CLASSPATH}
+#getting classpath
+for jarfile in ${IBJtsDIR}/*.jar ;do
+     CLASSPATH="${CLASSPATH}:${jarfile}"
+done
+
+
+if [ "${CONTROLLER}" = 1 ] ;then
+	temp=""
+	if ! temp="$(sed '/^IbDir=\.\r\{0,1\}$/!d' IBController.ini 2>/dev/null)" ;then
+		echo "$0: ${TWSHOME}/IBController.ini not found" >&2;
+		exit 1
+	fi
+	if test -z "${temp}" ;then
+		echo "$0: ${TWSHOME}/IBController.ini must contain 'IbDir=.'" >&2;
+		exit 1
+	fi
+	CLASSPATH="/opt/TWS/IBController/IBController.jar:${CLASSPATH}"
+	exec java ibcontroller.IBController ./IBController.ini
+else
+	exec java jclient.LoginFrame .
+fi
