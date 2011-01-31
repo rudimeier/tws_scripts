@@ -4,19 +4,24 @@
 _print_usage()
 {
 	cat <<EOF
-Usage: $0 [-p|--patched] [-c|--controller] [--tws TWS_DIR] [--test] [TWS_HOME]
+Usage: $0 [--javaopts OPTIONS] [-p|--patched] [-c|--controller] \
+[--tws TWS_DIR] [--test] [--] [TWS_HOME]
 EOF
 }
 
 _parse_cmd()
 {
 	local TEMP
-	TEMP=$(getopt -o cph --long controller,patched,tws:,test,help -n "$0" -- "$@") \
-		|| return 1
+	TEMP=$(getopt -o cph \
+		--long javaopts:,controller,patched,tws:,test,help \
+		-n "$0" -- "$@" \
+		) || return 1
 	eval set -- "$TEMP"
 
 	while true ; do
 	case "$1" in
+		--javaopts)
+			JAVA_OPTS="$2"; shift 2;;
 		-c|--controller)
 			CONTROLLER="1"; shift;;
 		-p|--patched)
@@ -52,15 +57,16 @@ _java_exec()
 		echo "TWS_DIR='${TWS_DIR}'"
 		echo "TWS_HOME='${TWS_HOME}'"
 		echo "CLASSPATH='${CLASSPATH}'"
-		echo java -cp "${CLASSPATH}" "$@"
+		echo "java ${JAVA_OPTS} -cp '${CLASSPATH}' $@"
 	else
-		exec java -cp "${CLASSPATH}" "$@"
+		eval "java ${JAVA_OPTS} -cp '${CLASSPATH}' $@"
 	fi
 }
 
 
 
 # defaults
+JAVA_OPTS=""
 CONTROLLER="0"
 PATCHED="0"
 DRYRUN="0"
