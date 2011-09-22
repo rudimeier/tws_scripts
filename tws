@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# tws: - comfortable shell script for running TWS
+#
+# usage: - set your paths in config section below
+#        - see --help
+#
+# Copyright (C) 2011 Ruediger Meier <sweet_f_a@gmx.de>
+# License: BSD 3-Clause
 
 
 _print_usage()
