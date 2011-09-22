@@ -9,6 +9,23 @@
 # License: BSD 3-Clause
 
 
+#### config section
+
+TWS_HOME="${HOME}/.tws"
+TWS_DIR="/opt/TWS/IBJts"
+IBController_DIR="/opt/TWS/IBController"
+
+
+#### defaults, don't change!
+
+JAVA_OPTS=""
+CONTROLLER="0"
+PATCHED="0"
+DRYRUN="0"
+
+
+#### funcs
+
 _print_usage()
 {
 	cat <<EOF
@@ -73,15 +90,8 @@ _java_exec()
 
 
 
-# defaults
-JAVA_OPTS=""
-CONTROLLER="0"
-PATCHED="0"
-DRYRUN="0"
-TWS_HOME="${HOME}/.tws"
-TWS_DIR="/opt/TWS/IBJts"
-IBController_DIR="/opt/TWS/IBController"
 
+#### here we go
 
 if ! _parse_cmd "$@" ;then
 	exit 1
