@@ -18,6 +18,7 @@ IBController_DIR="/opt/TWS/IBController"
 
 #### defaults, don't change!
 
+GATEWAY="0"
 JAVA_OPTS=""
 CONTROLLER="0"
 PATCHED="0"
@@ -29,7 +30,7 @@ DRYRUN="0"
 _print_usage()
 {
 	cat <<EOF
-Usage: $0 [--javaopts OPTIONS] [-p|--patched] [-c|--controller] \
+Usage: $0  [--gw] [--javaopts OPTIONS] [-p|--patched] [-c|--controller] \
 [--tws TWS_DIR] [--test] [--] [TWS_HOME]
 EOF
 }
@@ -38,13 +39,15 @@ _parse_cmd()
 {
 	local TEMP
 	TEMP=$(getopt -o cph \
-		--long javaopts:,controller,patched,tws:,test,help \
+		--long gw,javaopts:,controller,patched,tws:,test,help \
 		-n "$0" -- "$@" \
 		) || return 1
 	eval set -- "$TEMP"
 
 	while true ; do
 	case "$1" in
+		--gw)
+			GATEWAY="1"; shift;;
 		--javaopts)
 			JAVA_OPTS="$2"; shift 2;;
 		-c|--controller)
@@ -135,7 +138,15 @@ if [ "${CONTROLLER}" = 1 ] ;then
 		exit 1
 	fi
 	CLASSPATH="${IBController_DIR}/IBController.jar:${CLASSPATH}"
-	_java_exec ibcontroller.IBController ./IBController.ini
+	if [ "${GATEWAY}" = 1 ] ;then
+		_java_exec ibcontroller.IBGatewayController ./IBController.ini
+	else
+		_java_exec ibcontroller.IBController ./IBController.ini
+	fi
 else
-	_java_exec jclient.LoginFrame .
+	if [ "${GATEWAY}" = 1 ] ;then
+		_java_exec ibgateway.GWClient .
+	else
+		_java_exec jclient.LoginFrame .
+	fi
 fi
