@@ -1,0 +1,38 @@
+#!/bin/sh
+
+TWS_TIMEOUT="30"
+
+if test $# -ne 1;  then
+	echo "Usage: $0 <jar filename>" 1>&2
+	exit 1
+fi
+
+JARNAME="$(readlink -f "$1")" || exit 1
+
+TDIR="$(mktemp -d -t twsdir.XXXX)" || exit 1
+trap "rm -rf ${TDIR}" exit
+cd "${TDIR}" || exit 1
+
+jar xf "${JARNAME}" || exit 1
+TWS_HOME="${TDIR}/twshome"
+mkdir "${TWS_HOME}" || exit 1
+LOG_FIFO="${TDIR}/twslogpipe"
+mkfifo "${LOG_FIFO}" || exit 1
+
+java -cp IBJts/jts.jar:IBJts/* jclient.LoginFrame "${TWS_HOME}" &>"${LOG_FIFO}" &
+TWS_PID="$!"
+
+VERSION_LINE="$(timeout "${TWS_TIMEOUT}" grep -m1 --line-buffered "JTS-Main: Build" "${LOG_FIFO}")"
+grep_rval="$?"
+kill -9 "${TWS_PID}" &>/dev/null
+
+if test "${grep_rval}" = "124"; then
+	echo "timeout waiting for version string" 1>&2
+	exit 1
+elif test "${grep_rval}" != "0"; then
+	echo "could not grep version string" 1>&2
+	exit 1
+fi
+
+echo "${VERSION_LINE}"
+
