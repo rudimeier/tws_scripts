@@ -2,24 +2,39 @@
 
 TWS_TIMEOUT="30"
 
-if test $# -ne 1;  then
-	echo "Usage: $0 <jar filename>" 1>&2
+if ! test -e "$1"; then
+	echo "Usage: $0 <jar file | TWS dir>" 1>&2
 	exit 1
 fi
 
-JARNAME="$(readlink -f "$1")" || exit 1
+ARG1="$(readlink -v -f "$1")" || exit 1
 
 TDIR="$(mktemp -d -t twsdir.XXXX)" || exit 1
 trap "rm -rf ${TDIR}" exit
 cd "${TDIR}" || exit 1
 
-jar xf "${JARNAME}" || exit 1
+if test -d "${ARG1}"; then
+	if test -f "${ARG1}/jts.jar" ;then
+		TWS_CP="${ARG1}/jts.jar:${ARG1}/*"
+	else
+		echo "error: directory '"${ARG1}"' is not a TWS installation" 2>&1
+		exit 1
+	fi
+else
+	if jar xf "${ARG1}" &>/dev/null && test -f IBJts/jts.jar; then
+		TWS_CP="IBJts/jts.jar:IBJts/*"
+	else
+		echo "error: invalid jar file '"${ARG1}"'" 2>&1
+		exit 1
+	fi
+fi
+
 TWS_HOME="${TDIR}/twshome"
 mkdir "${TWS_HOME}" || exit 1
 LOG_FIFO="${TDIR}/twslogpipe"
 mkfifo "${LOG_FIFO}" || exit 1
 
-java -cp IBJts/jts.jar:IBJts/* jclient.LoginFrame "${TWS_HOME}" &>"${LOG_FIFO}" &
+java -cp "${TWS_CP}" jclient.LoginFrame "${TWS_HOME}" &>"${LOG_FIFO}" &
 TWS_PID="$!"
 
 VERSION_LINE="$(timeout "${TWS_TIMEOUT}" grep -m1 --line-buffered "JTS-Main: Build" "${LOG_FIFO}")"
