@@ -15,14 +15,14 @@ cd "${TDIR}" || exit 1
 
 if test -d "${ARG1}"; then
 	if test -f "${ARG1}/jts.jar" ;then
-		TWS_CP="${ARG1}/*"
+		TWS_DIR="${ARG1}"
 	else
 		echo "error: directory '"${ARG1}"' is not a TWS installation" 2>&1
 		exit 1
 	fi
 else
 	if jar xf "${ARG1}" &>/dev/null && test -f IBJts/jts.jar; then
-		TWS_CP="IBJts/*"
+		TWS_DIR="IBJts"
 	else
 		echo "error: invalid jar file '"${ARG1}"'" 2>&1
 		exit 1
@@ -31,13 +31,15 @@ fi
 
 TWS_HOME="${TDIR}/twshome"
 mkdir "${TWS_HOME}" || exit 1
+cp -a "${TWS_DIR}/jts.ini" "${TWS_HOME}" || exit 1
 LOG_FIFO="${TDIR}/twslogpipe"
 mkfifo "${LOG_FIFO}" || exit 1
 
+TWS_CP="${TWS_DIR}/*"
 java -cp "${TWS_CP}" jclient.LoginFrame "${TWS_HOME}" &>"${LOG_FIFO}" &
 TWS_PID="$!"
 
-VERSION_LINE="$(timeout "${TWS_TIMEOUT}" grep -m1 --line-buffered "JTS-Main: Build" "${LOG_FIFO}")"
+VERSION_LINE="$(timeout "${TWS_TIMEOUT}" grep -m1 --line-buffered ": Build" "${LOG_FIFO}")"
 grep_rval="$?"
 kill -9 "${TWS_PID}" &>/dev/null
 
