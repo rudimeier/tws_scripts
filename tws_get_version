@@ -15,14 +15,14 @@ cd "${TDIR}" || exit 1
 
 if test -d "${ARG1}"; then
 	if test -f "${ARG1}/jts.jar" ;then
-		TWS_CP="${ARG1}/jts.jar:${ARG1}/*"
+		TWS_CP="${ARG1}/*"
 	else
 		echo "error: directory '"${ARG1}"' is not a TWS installation" 2>&1
 		exit 1
 	fi
 else
 	if jar xf "${ARG1}" &>/dev/null && test -f IBJts/jts.jar; then
-		TWS_CP="IBJts/jts.jar:IBJts/*"
+		TWS_CP="IBJts/*"
 	else
 		echo "error: invalid jar file '"${ARG1}"'" 2>&1
 		exit 1
