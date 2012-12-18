@@ -49,5 +49,5 @@ elif test "${grep_rval}" != "0"; then
 	exit 1
 fi
 
-echo "${VERSION_LINE}"
+echo "${VERSION_LINE}" |sed -e 's/.*Build //1' -e 's/,.*//1'
 
