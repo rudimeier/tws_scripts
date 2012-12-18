@@ -1,0 +1,60 @@
+#!/bin/bash
+
+MAIL_SUBJECT="TWS download"
+FROM_ADDRESS="ruediger.meier@ga-group.nl"
+TO_ADDRESS="ruediger.meier@ga-group.nl"
+
+DOWNLOAD_DIR="/var/lib/software/commercial/IB/TWS"
+FILE_MIRROR="unixmacosx.jar"
+URL_MIRROR="http://www.interactivebrokers.com/download"
+FILE_CUR="${DOWNLOAD_DIR}/${FILE_MIRROR}"
+
+get_perm_file_name()
+{
+	local ver;
+	local dst;
+	ver="$(tws_get_version "$1" || echo unknown)"
+	dst="$(echo "$1" | sed "s/\(.*\)\.\(.*\)/\1-${ver}.\2/g")"
+	echo "${dst}"
+}
+
+if ! test -d "${DOWNLOAD_DIR}" ;then
+	echo "error: "${DOWNLOAD_DIR}" does not exist" 1>&2
+	exit 1
+fi
+
+TDIR="$(mktemp -d -t twsdl.XXXX)" || exit 1
+trap "rm -rf ${TDIR}" exit
+cd "${TDIR}" || exit 1
+
+# create fake sparse file for wget because wget -K is broken and -O file
+# conflicts with -N
+if test -f "${FILE_CUR}" ; then
+	truncate -r "${FILE_CUR}" "${FILE_MIRROR}"
+	touch -r "${FILE_CUR}" "${FILE_MIRROR}"
+fi
+
+if wget --no-verbose -N -P "${TDIR}" "${URL_MIRROR}/${FILE_MIRROR}" ;then 
+
+    if test "${FILE_MIRROR}" -nt "${FILE_CUR}" ; then
+        echo "TWS needs update" 1>&2
+        WARN=1
+        MAIL_SUBJECT="${MAIL_SUBJECT}, update available!"
+	DST="$(get_perm_file_name "${FILE_MIRROR}")"
+        mv "${FILE_MIRROR}" "${DOWNLOAD_DIR}/${DST}"
+	ln -sf "${DST}" "${FILE_CUR}"
+    else
+        echo "TWS is uptodate" 1>&2
+    fi
+else
+    echo "check for update failed" 1>&2
+    WARN=1;
+    MAIL_SUBJECT="${MAIL_SUBJECT}, check for update failed!"
+fi
+
+if test -n "$WARN" ; then
+   echo "send mail" 1>&2
+   echo "Nicht vergessen!" | mailx -s "$MAIL_SUBJECT" -r $FROM_ADDRESS $TO_ADDRESS
+fi
+
+
