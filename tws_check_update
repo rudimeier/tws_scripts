@@ -1,8 +1,9 @@
 #!/bin/bash
 
 MAIL_SUBJECT="TWS download"
-FROM_ADDRESS="ruediger.meier@ga-group.nl"
-TO_ADDRESS="ruediger.meier@ga-group.nl"
+# set up email address if you want to be informed about updates
+FROM_ADDRESS=""
+TO_ADDRESS=""
 
 DOWNLOAD_DIR="/var/lib/software/commercial/IB/TWS"
 FILE_MIRROR="unixmacosx.jar"
@@ -52,7 +53,7 @@ else
     MAIL_SUBJECT="${MAIL_SUBJECT}, check for update failed!"
 fi
 
-if test -n "$WARN" ; then
+if test -n "$WARN" && test -n "$TO_ADDRESS"; then
    echo "send mail" 1>&2
    echo "Nicht vergessen!" | mailx -s "$MAIL_SUBJECT" -r $FROM_ADDRESS $TO_ADDRESS
 fi
