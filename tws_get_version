@@ -14,7 +14,7 @@ trap "rm -rf ${TDIR}" exit
 cd "${TDIR}" || exit 1
 
 if test -d "${ARG1}"; then
-	if test -f "${ARG1}/jts.jar" ;then
+	if test -f "${ARG1}/jts.ini" ;then
 		TWS_DIR="${ARG1}"
 	else
 		echo "error: directory '"${ARG1}"' is not a TWS installation" 2>&1
@@ -35,7 +35,7 @@ cp -a "${TWS_DIR}/jts.ini" "${TWS_HOME}" || exit 1
 LOG_FIFO="${TDIR}/twslogpipe"
 mkfifo "${LOG_FIFO}" || exit 1
 
-TWS_CP="${TWS_DIR}/*"
+TWS_CP="${TWS_DIR}/jts:${TWS_DIR}/*"
 java -cp "${TWS_CP}" jclient.LoginFrame "${TWS_HOME}" &>"${LOG_FIFO}" &
 disown
 TWS_PID="$!"
