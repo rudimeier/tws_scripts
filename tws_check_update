@@ -7,7 +7,7 @@ TO_ADDRESS=""
 
 DOWNLOAD_DIR="/var/lib/software/commercial/IB/TWS"
 FILE_MIRROR="unixmacosx.jar"
-URL_MIRROR="http://www.interactivebrokers.com/download"
+URL_MIRROR="http://download2.interactivebrokers.com/download"
 FILE_CUR="${DOWNLOAD_DIR}/${FILE_MIRROR}"
 
 get_perm_file_name()
