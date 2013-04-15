@@ -38,7 +38,7 @@ for FILE_MIRROR in $FILES_TO_MIRROR; do
 		touch -r "${FILE_CUR}" "${FILE_MIRROR}"
 	fi
 
-	if wget --no-verbose -N -P "${TDIR}" "${URL_MIRROR}/${FILE_MIRROR}" ;then 
+	if wget --no-verbose -U x -N -P "${TDIR}" "${URL_MIRROR}/${FILE_MIRROR}" ;then 
 		if test "${FILE_MIRROR}" -nt "${FILE_CUR}" ; then
 			DST="$(get_perm_file_name "${FILE_MIRROR}")"
 			mv "${FILE_MIRROR}" "${DOWNLOAD_DIR}/${DST}"
