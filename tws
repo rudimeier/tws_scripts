@@ -22,6 +22,7 @@ GATEWAY="0"
 JAVA_OPTS=""
 CONTROLLER="0"
 PATCHED="0"
+LOOP="0"
 DRYRUN="0"
 
 
@@ -31,7 +32,7 @@ _print_usage()
 {
 	cat <<EOF
 Usage: $0  [--gw] [--javaopts OPTIONS] [-p|--patched] [-c|--controller] \
-[--tws TWS_DIR] [--test] [--] [TWS_HOME]
+[--loop] [--tws TWS_DIR] [--test] [--] [TWS_HOME]
 EOF
 }
 
@@ -39,7 +40,7 @@ _parse_cmd()
 {
 	local TEMP
 	TEMP=$(getopt -o cph \
-		--long gw,javaopts:,controller,patched,tws:,test,help \
+		--long gw,javaopts:,controller,patched,loop,tws:,test,help \
 		-n "$0" -- "$@" \
 		) || return 1
 	eval set -- "$TEMP"
@@ -54,6 +55,8 @@ _parse_cmd()
 			CONTROLLER="1"; shift;;
 		-p|--patched)
 			PATCHED="1"; shift;;
+		--loop)
+			LOOP="1"; shift 1;;
 		--tws)
 			TWS_DIR="$(readlink -f "$2")"; shift 2;;
 		--test)
@@ -76,6 +79,18 @@ _parse_cmd()
 	fi
 }
 
+eval_loop()
+{
+	if test ${LOOP} = 0 ;then
+		eval "$@"
+	else
+		while true; do
+			eval "$@"
+			sleep 1
+		done
+	fi
+}
+
 _java_exec()
 {
 	if [ "${DRYRUN}" = "1" ] ;then
@@ -87,7 +102,7 @@ _java_exec()
 		echo "CLASSPATH='${CLASSPATH}'"
 		echo "java ${JAVA_OPTS} -cp '${CLASSPATH}' $@"
 	else
-		eval "java ${JAVA_OPTS} -cp '${CLASSPATH}' $@"
+		eval_loop "java ${JAVA_OPTS} -cp '${CLASSPATH}' $@"
 	fi
 }
 
