@@ -77,15 +77,29 @@ _parse_cmd()
 	elif test "$#" -gt 0  ;then
 		TWS_HOME="$1"
 	fi
+
+	LOGFILE="${TWS_HOME}/tws_restart.log"
+}
+
+echo_log()
+{
+	local now=`date "+%F %T"`
+	echo -e "${now}: $@" |tee -a "${LOGFILE}" >&2
 }
 
 eval_loop()
 {
 	if test ${LOOP} = 0 ;then
+		echo_log "start tws"
 		eval "$@"
+		echo_log "tws exit code $?"
 	else
+		local i="0";
 		while true; do
+			echo_log "start tws loop $i"
 			eval "$@"
+			echo_log "tws exit code $? ... will be restarted"
+			i="$(( i+1 ))"
 			sleep 1
 		done
 	fi
