@@ -6,7 +6,7 @@ FROM_ADDRESS=""
 TO_ADDRESS=""
 
 DOWNLOAD_DIR="/var/lib/software/commercial/IB/TWS"
-FILE_MIRROR="unixmacosx.jar"
+FILE_MIRROR="unixmacosx_latest.jar"
 URL_MIRROR="http://download2.interactivebrokers.com/download"
 FILE_CUR="${DOWNLOAD_DIR}/${FILE_MIRROR}"
 
@@ -15,7 +15,7 @@ get_perm_file_name()
 	local ver;
 	local dst;
 	ver="$(tws_get_version "$1" || echo unknown)"
-	dst="$(echo "$1" | sed "s/\(.*\)\.\(.*\)/\1-${ver}.\2/g")"
+	dst="$(echo "$1" | sed -e "s/\(.*\)\.\(.*\)/\1-${ver}.\2/g" -e 's/_latest//g')"
 	echo "${dst}"
 }
 
