@@ -1,4 +1,5 @@
 #!/bin/bash
+export LANG="C"
 
 MAIL_SUBJECT="TWS download"
 # set up email address if you want to be informed about updates
@@ -6,9 +7,8 @@ FROM_ADDRESS=""
 TO_ADDRESS=""
 
 DOWNLOAD_DIR="/var/lib/software/commercial/IB/TWS"
-FILE_MIRROR="unixmacosx_latest.jar"
+FILES_TO_MIRROR="unixmacosx.jar unixmacosx_latest.jar"
 URL_MIRROR="http://download2.interactivebrokers.com/download"
-FILE_CUR="${DOWNLOAD_DIR}/${FILE_MIRROR}"
 
 get_perm_file_name()
 {
@@ -28,34 +28,38 @@ TDIR="$(mktemp -d -t twsdl.XXXX)" || exit 1
 trap "rm -rf ${TDIR}" exit
 cd "${TDIR}" || exit 1
 
-# create fake sparse file for wget because wget -K is broken and -O file
-# conflicts with -N
-if test -f "${FILE_CUR}" ; then
-	truncate -r "${FILE_CUR}" "${FILE_MIRROR}"
-	touch -r "${FILE_CUR}" "${FILE_MIRROR}"
-fi
+for FILE_MIRROR in $FILES_TO_MIRROR; do
+	FILE_CUR="${DOWNLOAD_DIR}/${FILE_MIRROR}"
 
-if wget --no-verbose -N -P "${TDIR}" "${URL_MIRROR}/${FILE_MIRROR}" ;then 
+	# create fake sparse file for wget because wget -K is broken and -O file
+	# conflicts with -N
+	if test -f "${FILE_CUR}" ; then
+		truncate -r "${FILE_CUR}" "${FILE_MIRROR}"
+		touch -r "${FILE_CUR}" "${FILE_MIRROR}"
+	fi
 
-    if test "${FILE_MIRROR}" -nt "${FILE_CUR}" ; then
-        echo "TWS needs update" 1>&2
-        WARN=1
-        MAIL_SUBJECT="${MAIL_SUBJECT}, update available!"
-	DST="$(get_perm_file_name "${FILE_MIRROR}")"
-        mv "${FILE_MIRROR}" "${DOWNLOAD_DIR}/${DST}"
-	ln -sf "${DST}" "${FILE_CUR}"
-    else
-        echo "TWS is uptodate" 1>&2
-    fi
-else
-    echo "check for update failed" 1>&2
-    WARN=1;
-    MAIL_SUBJECT="${MAIL_SUBJECT}, check for update failed!"
-fi
+	if wget --no-verbose -N -P "${TDIR}" "${URL_MIRROR}/${FILE_MIRROR}" ;then 
+		if test "${FILE_MIRROR}" -nt "${FILE_CUR}" ; then
+			DST="$(get_perm_file_name "${FILE_MIRROR}")"
+			mv "${FILE_MIRROR}" "${DOWNLOAD_DIR}/${DST}"
+			ln -sf "${DST}" "${FILE_CUR}"
+			WARN=1
+			MAIL_SUBJECT="${MAIL_SUBJECT}, updated ${DST}"
+			echo "${FILE_MIRROR} updated to ${DST}" 1>&2
+		else
+			echo "${FILE_MIRROR} was uptodate" 1>&2
+		fi
+	else
+		echo "check for ${FILE_MIRROR} update failed" 1>&2
+		WARN=1;
+		MAIL_SUBJECT="${MAIL_SUBJECT}, check ${FILE_MIRROR} failed"
+	fi
+done
 
 if test -n "$WARN" && test -n "$TO_ADDRESS"; then
-   echo "send mail" 1>&2
-   echo "Nicht vergessen!" | mailx -s "$MAIL_SUBJECT" -r $FROM_ADDRESS $TO_ADDRESS
+	echo "send mail: $MAIL_SUBJECT" 1>&2
+	ls -l "${DOWNLOAD_DIR}" \
+		| mailx -s "$MAIL_SUBJECT" -r $FROM_ADDRESS $TO_ADDRESS
 fi
 
 
