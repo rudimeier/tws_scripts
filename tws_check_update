@@ -39,17 +39,17 @@ for FILE_MIRROR in $FILES_TO_MIRROR; do
 
 	if wget --no-verbose -N -P "${TDIR}" "${URL_MIRROR}/${FILE_MIRROR}" ;then 
 		if test "${FILE_MIRROR}" -nt "${FILE_CUR}" ; then
-			echo "TWS needs update" 1>&2
 			WARN=1
 			MAIL_SUBJECT="${MAIL_SUBJECT}, update available!"
 			DST="$(get_perm_file_name "${FILE_MIRROR}")"
 			mv "${FILE_MIRROR}" "${DOWNLOAD_DIR}/${DST}"
 			ln -sf "${DST}" "${FILE_CUR}"
+			echo "${FILE_MIRROR} updated to ${DST}" 1>&2
 		else
-			echo "TWS is uptodate" 1>&2
+			echo "${FILE_MIRROR} was uptodate" 1>&2
 		fi
 	else
-		echo "check for update failed" 1>&2
+		echo "check for ${FILE_MIRROR} update failed" 1>&2
 		WARN=1;
 		MAIL_SUBJECT="${MAIL_SUBJECT}, check for update failed!"
 	fi
