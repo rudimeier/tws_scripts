@@ -39,11 +39,11 @@ for FILE_MIRROR in $FILES_TO_MIRROR; do
 
 	if wget --no-verbose -N -P "${TDIR}" "${URL_MIRROR}/${FILE_MIRROR}" ;then 
 		if test "${FILE_MIRROR}" -nt "${FILE_CUR}" ; then
-			WARN=1
-			MAIL_SUBJECT="${MAIL_SUBJECT}, update available!"
 			DST="$(get_perm_file_name "${FILE_MIRROR}")"
 			mv "${FILE_MIRROR}" "${DOWNLOAD_DIR}/${DST}"
 			ln -sf "${DST}" "${FILE_CUR}"
+			WARN=1
+			MAIL_SUBJECT="${MAIL_SUBJECT}, updated ${DST}"
 			echo "${FILE_MIRROR} updated to ${DST}" 1>&2
 		else
 			echo "${FILE_MIRROR} was uptodate" 1>&2
@@ -51,13 +51,14 @@ for FILE_MIRROR in $FILES_TO_MIRROR; do
 	else
 		echo "check for ${FILE_MIRROR} update failed" 1>&2
 		WARN=1;
-		MAIL_SUBJECT="${MAIL_SUBJECT}, check for update failed!"
+		MAIL_SUBJECT="${MAIL_SUBJECT}, check ${FILE_MIRROR} failed"
 	fi
 done
 
 if test -n "$WARN" && test -n "$TO_ADDRESS"; then
-   echo "send mail" 1>&2
-   echo "Nicht vergessen!" | mailx -s "$MAIL_SUBJECT" -r $FROM_ADDRESS $TO_ADDRESS
+	echo "send mail: $MAIL_SUBJECT" 1>&2
+	ls -l "${DOWNLOAD_DIR}" \
+		| mailx -s "$MAIL_SUBJECT" -r $FROM_ADDRESS $TO_ADDRESS
 fi
 
 
