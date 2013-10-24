@@ -6,9 +6,8 @@ FROM_ADDRESS=""
 TO_ADDRESS=""
 
 DOWNLOAD_DIR="/var/lib/software/commercial/IB/TWS"
-FILE_MIRROR="unixmacosx_latest.jar"
+FILES_TO_MIRROR="unixmacosx.jar unixmacosx_latest.jar"
 URL_MIRROR="http://download2.interactivebrokers.com/download"
-FILE_CUR="${DOWNLOAD_DIR}/${FILE_MIRROR}"
 
 get_perm_file_name()
 {
@@ -28,6 +27,8 @@ TDIR="$(mktemp -d -t twsdl.XXXX)" || exit 1
 trap "rm -rf ${TDIR}" exit
 cd "${TDIR}" || exit 1
 
+for FILE_MIRROR in $FILES_TO_MIRROR; do
+	FILE_CUR="${DOWNLOAD_DIR}/${FILE_MIRROR}"
 # create fake sparse file for wget because wget -K is broken and -O file
 # conflicts with -N
 if test -f "${FILE_CUR}" ; then
@@ -52,6 +53,7 @@ else
     WARN=1;
     MAIL_SUBJECT="${MAIL_SUBJECT}, check for update failed!"
 fi
+done
 
 if test -n "$WARN" && test -n "$TO_ADDRESS"; then
    echo "send mail" 1>&2
