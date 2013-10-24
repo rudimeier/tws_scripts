@@ -1,4 +1,5 @@
 #!/bin/bash
+export LANG="C"
 
 MAIL_SUBJECT="TWS download"
 # set up email address if you want to be informed about updates
