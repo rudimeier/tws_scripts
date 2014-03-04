@@ -14,7 +14,7 @@ get_perm_file_name()
 {
 	local ver;
 	local dst;
-	ver="$(tws_get_version "$1" || echo unknown)"
+	ver="$(tws_get_version "$1" || date +"unknown%Y%m%d%H%M%S")"
 	dst="$(echo "$1" | sed -e "s/\(.*\)\.\(.*\)/\1-${ver}.\2/g" -e 's/_latest//g')"
 	echo "${dst}"
 }
