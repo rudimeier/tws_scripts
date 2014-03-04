@@ -17,14 +17,14 @@ if test -d "${ARG1}"; then
 	if test -f "${ARG1}/jts.ini" ;then
 		TWS_DIR="${ARG1}"
 	else
-		echo "error: directory '"${ARG1}"' is not a TWS installation" 2>&1
+		echo "error: directory '"${ARG1}"' is not a TWS installation" >&2
 		exit 1
 	fi
 else
 	if jar xf "${ARG1}" &>/dev/null && test -f IBJts/jts.jar; then
 		TWS_DIR="IBJts"
 	else
-		echo "error: invalid jar file '"${ARG1}"'" 2>&1
+		echo "error: invalid jar file '"${ARG1}"'" >&2
 		exit 1
 	fi
 fi
