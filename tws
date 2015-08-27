@@ -87,17 +87,32 @@ echo_log()
 	echo -e "${now}: $@" |tee -a "${LOGFILE}" >&2
 }
 
+xeval()
+{
+	local tws_pid
+	local tws_exit_code
+	local tws_pid_file="${TWS_HOME}/tws_java.pid"
+
+	"$@" &
+	tws_pid="$!"
+	echo  "${tws_pid}" > "${tws_pid_file}"
+	echo_log "tws started, PID ${tws_pid}"
+	wait "${tws_pid}"
+	tws_exit_code=$?
+	rm "${tws_pid_file}"
+	return $tws_exit_code
+}
+
 eval_loop()
 {
 	if test ${LOOP} = 0 ;then
-		echo_log "start tws"
-		eval "$@"
+		xeval "$@"
 		echo_log "tws exit code $?"
 	else
 		local i="0";
 		while true; do
 			echo_log "start tws loop $i"
-			eval "$@"
+			xeval "$@"
 			echo_log "tws exit code $? ... will be restarted"
 			i="$(( i+1 ))"
 			sleep 1
@@ -116,7 +131,7 @@ _java_exec()
 		echo "CLASSPATH='${CLASSPATH}'"
 		echo "java ${JAVA_OPTS} -cp '${CLASSPATH}' $@"
 	else
-		eval_loop "java ${JAVA_OPTS} -cp '${CLASSPATH}' $@"
+		eval_loop java ${JAVA_OPTS} -cp "${CLASSPATH}" "$@"
 	fi
 }
 
