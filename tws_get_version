@@ -45,6 +45,7 @@ getver_shinstaller_grep()
 	local tailnum
 	local tws_version
 
+	# we are looking for such a line: "tail -c 72704134 $0 > sfx_archive.tar.gz"
 	tailnum=$(grep -a -m1 "\btail\b.* -c.*" "$ARG1" \
 	          | sed -n 's/.* -c *\([0-9]*\).*/\1/p')
 
@@ -53,9 +54,11 @@ getver_shinstaller_grep()
 	fi
 
 	if ! tail -c "$tailnum" "${ARG1}" | tar -xzf - i4jparams.conf; then
-		err_exit "can't untar i4jparams.confs from sh installer '"$ARG1"'"
+		err_exit "can't untar i4jparams.conf from sh installer '"$ARG1"'"
 	fi
 
+	# looking for something like this:
+	# <variable name="buildInfo" value="Build 958.1a Aug 30 2016 5:32:58 PM" />
 	tws_version=$(grep -m1 '<variable name="buildInfo"' i4jparams.conf \
 		| sed -n 's/.* value="Build \([^ ]*\) .*/\1/p')
 
