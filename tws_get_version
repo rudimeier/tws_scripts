@@ -7,12 +7,11 @@ if ! test -e "$1"; then
 	exit 1
 fi
 
-ARG1="$(readlink -v -f "$1")" || exit 1
-
-TDIR="$(mktemp -d -t twsdir.XXXX)" || exit 1
-trap "rm -rf ${TDIR}" exit
-cd "${TDIR}" || exit 1
-
+err_exit()
+{
+	echo "error: $1" 1>&2
+	exit 1
+}
 
 # may not work with "new style" twsdir
 getver_twsdir_run()
@@ -33,11 +32,9 @@ getver_twsdir_run()
 	kill -9 "${TWS_PID}" &>/dev/null
 
 	if test "${grep_rval}" = "124"; then
-		echo "timeout waiting for version string" 1>&2
-		exit 1
+		err_exit "timeout waiting for version string"
 	elif test "${grep_rval}" != "0"; then
-		echo "could not grep version string" 1>&2
-		exit 1
+		err_exit "could not grep version string"
 	fi
 
 	echo "${VERSION_LINE}" |sed -e 's/.*Build //1' -e 's/,.*//1'
@@ -52,21 +49,18 @@ getver_shinstaller_grep()
 	          | sed -n 's/.* -c *\([0-9]*\).*/\1/p')
 
 	if ! test "0" -lt "$tailnum" 2>/dev/null; then
-		echo "error: can't grep tailnum from sh installer '"$ARG1"'" >&2
-		exit 1
+		err_exit "can't grep tailnum from sh installer '"$ARG1"'"
 	fi
 
 	if ! tail -c "$tailnum" "${ARG1}" | tar -xzf - i4jparams.conf; then
-		echo "error: can't untar i4jparams.confs from sh installer '"$ARG1"'">&2
-		exit 1
+		err_exit "can't untar i4jparams.confs from sh installer '"$ARG1"'"
 	fi
 
 	tws_version=$(grep -m1 '<variable name="buildInfo"' i4jparams.conf \
 		| sed -n 's/.* value="Build \([^ ]*\) .*/\1/p')
 
 	if test -z "$tws_version"; then
-		echo "error: can't grep tws version from sh installer '"$ARG1"'" >&2
-		exit 1
+		err_exit "can't grep tws version from sh installer '"$ARG1"'"
 	fi
 
 	echo "$tws_version"
@@ -75,13 +69,18 @@ getver_shinstaller_grep()
 
 ## here we go
 
+ARG1="$(readlink -v -f "$1")" || err_exit "fatal"
+
+TDIR="$(mktemp -d -t twsdir.XXXX)" || err_exit "fatal"
+trap "rm -rf ${TDIR}" exit
+cd "${TDIR}" || err_exit "fatal"
+
 TWS_DIR=""
 if test -d "${ARG1}"; then
 	if test -f "${ARG1}/jts.ini" ;then
 		TWS_DIR="${ARG1}"
 	else
-		echo "error: directory '"${ARG1}"' is not a TWS installation" >&2
-		exit 1
+		err_exit "directory '"${ARG1}"' is not a TWS installation"
 	fi
 else
 	case "$ARG1" in
@@ -92,8 +91,7 @@ else
 		if test -f IBJts/jts.jar; then
 			TWS_DIR="IBJts"
 		else
-			echo "error: invalid jar file '"${ARG1}"'" >&2
-			exit 1
+			err_exit "invalid jar file '"${ARG1}"'"
 		fi
 		;;
 	*.sh | *.SH)
@@ -101,8 +99,7 @@ else
 		true
 		;;
 	*)
-		echo "error: unsupported file type '"${ARG1}"'" >&2
-		exit 1
+		err_exit "unsupported file type '"${ARG1}"'"
 		;;
 	esac
 fi

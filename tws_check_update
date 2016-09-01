@@ -22,6 +22,12 @@ URLS_TO_MIRROR="
 # use "tws_get_version" from the same directory as this scripts
 TWS_GET_VERSION="$(dirname "$(readlink -f "$0")")/tws_get_version"
 
+err_exit()
+{
+	echo "error: $1" 1>&2
+	exit 1
+}
+
 get_perm_file_name()
 {
 	local ver;
@@ -32,13 +38,12 @@ get_perm_file_name()
 }
 
 if ! test -d "${DOWNLOAD_DIR}" ;then
-	echo "error: "${DOWNLOAD_DIR}" does not exist" 1>&2
-	exit 1
+	err_exit "${DOWNLOAD_DIR} does not exist"
 fi
 
-TDIR="$(mktemp -d -t twsdl.XXXX)" || exit 1
+TDIR="$(mktemp -d -t twsdl.XXXX)" || err_exit "fatal"
 trap "rm -rf ${TDIR}" exit
-cd "${TDIR}" || exit 1
+cd "${TDIR}" || err_exit "fatal"
 
 for URL in $URLS_TO_MIRROR; do
 	FILE_MIRROR="$(basename "${URL}")"
