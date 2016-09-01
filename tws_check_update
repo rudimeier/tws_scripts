@@ -17,11 +17,14 @@ URLS_TO_MIRROR="
 	${BASE_URL}/stable-standalone/tws-stable-standalone-linux-x64.sh
 "
 
+# use "tws_get_version" from the same directory as this scripts
+TWS_GET_VERSION="$(dirname "$(readlink -f "$0")")/tws_get_version"
+
 get_perm_file_name()
 {
 	local ver;
 	local dst;
-	ver="$(tws_get_version "$1" || date -r "$1" +"unknown%Y%m%d%H%M%S")"
+	ver="$("$TWS_GET_VERSION" "$1" || date -r "$1" +"unknown%Y%m%d%H%M%S")"
 	dst="$(echo "$1" | sed -e "s/\(.*\)\.\(.*\)/\1-${ver}.\2/g" -e 's/_latest//g')"
 	echo "${dst}"
 }
