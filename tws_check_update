@@ -8,13 +8,15 @@ TO_ADDRESS=""
 
 DOWNLOAD_DIR="/var/lib/software/commercial/IB/TWS"
 
-BASE_URL="https://download2.interactivebrokers.com/installers/tws"
+BASE_URL="https://download2.interactivebrokers.com/installers"
 URLS_TO_MIRROR="
-	${BASE_URL}/latest/tws-latest-linux-x64.sh
-	${BASE_URL}/stable/tws-stable-linux-x64.sh
-	${BASE_URL}/beta/tws-beta-linux-x64.sh
-	${BASE_URL}/latest-standalone/tws-latest-standalone-linux-x64.sh
-	${BASE_URL}/stable-standalone/tws-stable-standalone-linux-x64.sh
+	${BASE_URL}/tws/stable/tws-stable-linux-x64.sh
+	${BASE_URL}/tws/latest/tws-latest-linux-x64.sh
+	${BASE_URL}/tws/beta/tws-beta-linux-x64.sh
+	${BASE_URL}/tws/stable-standalone/tws-stable-standalone-linux-x64.sh
+	${BASE_URL}/tws/latest-standalone/tws-latest-standalone-linux-x64.sh
+	${BASE_URL}/ibgateway/stable-standalone/ibgateway-stable-standalone-linux-x64.sh
+	${BASE_URL}/ibgateway/latest-standalone/ibgateway-latest-standalone-linux-x64.sh
 "
 
 # use "tws_get_version" from the same directory as this scripts
