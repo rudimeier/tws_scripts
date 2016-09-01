@@ -52,7 +52,12 @@ for URL in $URLS_TO_MIRROR; do
 	if wget --no-verbose -U "Mozilla/5.0" -N -P "${TDIR}" "${URL}" ;then
 		if test "${FILE_MIRROR}" -nt "${FILE_CUR}" ; then
 			DST="$(get_perm_file_name "${FILE_MIRROR}")"
-			mv "${FILE_MIRROR}" "${DOWNLOAD_DIR}/${DST}"
+			DSTP="${DOWNLOAD_DIR}/${DST}"
+			if test -f "$DSTP"; then
+				# keep duplicate versioned files for later debugging
+				mv "$DSTP" "$DSTP-$(date -r "$DSTP" +"dup%Y%m%d%H%M%S")"
+			fi
+			mv "${FILE_MIRROR}" "$DSTP"
 			ln -sf "${DST}" "${FILE_CUR}"
 			WARN=1
 			MAIL_SUBJECT="${MAIL_SUBJECT}, updated ${DST}"
