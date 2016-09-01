@@ -83,20 +83,29 @@ if test -d "${ARG1}"; then
 		echo "error: directory '"${ARG1}"' is not a TWS installation" >&2
 		exit 1
 	fi
-elif test ${ARG1: -4} = ".jar"; then
-	if jar xf "${ARG1}" &>/dev/null && test -f IBJts/jts.jar; then
-		TWS_DIR="IBJts"
-	else
-		echo "error: invalid jar file '"${ARG1}"'" >&2
-		exit 1
-	fi
-elif test ${ARG1: -3} = ".sh"; then
-	true
 else
-	echo "error: unsupported file type '"${ARG1}"'" >&2
-	exit 1
+	case "$ARG1" in
+	*.jar | *.JAR)
+		# create TWS_DIR from .jar installer
+		jar xf "${ARG1}" &>/dev/null
+		# jar's return values are non-sense ...
+		if test -f IBJts/jts.jar; then
+			TWS_DIR="IBJts"
+		else
+			echo "error: invalid jar file '"${ARG1}"'" >&2
+			exit 1
+		fi
+		;;
+	*.sh | *.SH)
+		# do nothing, the only case where TWS_DIR is empty ...
+		true
+		;;
+	*)
+		echo "error: unsupported file type '"${ARG1}"'" >&2
+		exit 1
+		;;
+	esac
 fi
-
 
 if test -n "$TWS_DIR"; then
 	getver_twsdir_run
