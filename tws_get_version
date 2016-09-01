@@ -40,6 +40,33 @@ getver_twsdir_run()
 	echo "${VERSION_LINE}" |sed -e 's/.*Build //1' -e 's/,.*//1'
 }
 
+# may only work with "new style" twsdir
+getver_pfile_grep()
+{
+	local pfile="$1"
+	local tws_version=""
+
+	tws_version=$(grep -m1 '<variable name="buildInfo"' "$pfile" \
+		| sed -n 's/.* value="Build \([^ ]*\) .*/\1/p')
+
+	if test -z "$tws_version"; then
+		echo "error: can't grep tws version from '"$pfile"'" >&2
+		exit 1
+	fi
+
+	echo "$tws_version"
+}
+
+getver_twsdir()
+{
+	if test -f "${TWS_DIR}/.install4j/i4jparams.conf" ;then
+		getver_pfile_grep "${TWS_DIR}/.install4j/i4jparams.conf"
+	elif test -f "${TWS_DIR}/jts.ini"; then
+		getver_twsdir_run
+	fi
+}
+
+
 getver_shinstaller_grep()
 {
 	local tailnum
@@ -57,16 +84,7 @@ getver_shinstaller_grep()
 		err_exit "can't untar i4jparams.conf from sh installer '"$ARG1"'"
 	fi
 
-	# looking for something like this:
-	# <variable name="buildInfo" value="Build 958.1a Aug 30 2016 5:32:58 PM" />
-	tws_version=$(grep -m1 '<variable name="buildInfo"' i4jparams.conf \
-		| sed -n 's/.* value="Build \([^ ]*\) .*/\1/p')
-
-	if test -z "$tws_version"; then
-		err_exit "can't grep tws version from sh installer '"$ARG1"'"
-	fi
-
-	echo "$tws_version"
+	getver_pfile_grep i4jparams.conf
 }
 
 
@@ -80,7 +98,8 @@ cd "${TDIR}" || err_exit "fatal"
 
 TWS_DIR=""
 if test -d "${ARG1}"; then
-	if test -f "${ARG1}/jts.ini" ;then
+	if test -f "${ARG1}/jts.ini" \
+	   || test -f "${ARG1}/.install4j/i4jparams.conf" ;then
 		TWS_DIR="${ARG1}"
 	else
 		err_exit "directory '"${ARG1}"' is not a TWS installation"
@@ -108,7 +127,7 @@ else
 fi
 
 if test -n "$TWS_DIR"; then
-	getver_twsdir_run
+	getver_twsdir
 else
 	getver_shinstaller_grep
 fi
