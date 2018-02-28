@@ -18,27 +18,38 @@ getver_twsdir_run()
 {
 	TWS_HOME="${TDIR}/twshome"
 	mkdir "${TWS_HOME}" || exit 1
-	cp -a "${TWS_DIR}/jts.ini" "${TWS_HOME}" || exit 1
-	LOG_FIFO="${TDIR}/twslogpipe"
-	mkfifo "${LOG_FIFO}" || exit 1
+	LOG_STDOUT="logstdout"
+	LOG_FILE="${TWS_HOME}/launcher.log"
+	touch "$LOG_FILE"
+
+	if test -f "${TWS_DIR}/jts.ini"; then
+		cp -a "${TWS_DIR}/jts.ini" "${TWS_HOME}" || exit 1
+	fi
 
 	TWS_CP="${TWS_DIR}/jts:${TWS_DIR}/*"
-	java -cp "${TWS_CP}" jclient.LoginFrame "${TWS_HOME}" &>"${LOG_FIFO}" &
+	java -cp "${TWS_CP}" jclient.LoginFrame "${TWS_HOME}" &>"${LOG_STDOUT}" &
 	disown
 	TWS_PID="$!"
 
-	VERSION_LINE="$(timeout "${TWS_TIMEOUT}" grep -m1 --line-buffered ": Build" "${LOG_FIFO}")"
-	grep_rval="$?"
+	tws_killed=0
+	VERSION_LINE=""
+	for i in $(seq 1 $(( TWS_TIMEOUT * 5 )) ); do
+		kill -0 "$TWS_PID" &>/dev/null || break
+		VERSION_LINE="$(grep -h -m1 --line-buffered \
+		                " Build " "$LOG_STDOUT" "$LOG_FILE")" && break
+		sleep 0.2
+	done
 	kill -9 "${TWS_PID}" &>/dev/null
+	tws_killed="$?"
 
-	if test "${grep_rval}" = "124"; then
+	if test "$tws_killed" != "0"; then
+		err_exit "tws not running, maybe '${TWS_DIR}' is not a TWS installation"
+	elif test -z "${VERSION_LINE}"; then
 		err_exit "timeout waiting for version string"
-	elif test "${grep_rval}" != "0"; then
-		err_exit "could not grep version string"
 	fi
-
 	echo "${VERSION_LINE}" |sed -e 's/.*Build //1' -e 's/,.*//1'
 }
+
 
 # may only work with "new style" twsdir
 getver_pfile_grep()
@@ -61,7 +72,7 @@ getver_twsdir()
 {
 	if test -f "${TWS_DIR}/.install4j/i4jparams.conf" ;then
 		getver_pfile_grep "${TWS_DIR}/.install4j/i4jparams.conf"
-	elif test -f "${TWS_DIR}/jts.ini"; then
+	else
 		getver_twsdir_run
 	fi
 }
@@ -98,12 +109,7 @@ cd "${TDIR}" || err_exit "fatal"
 
 TWS_DIR=""
 if test -d "${ARG1}"; then
-	if test -f "${ARG1}/jts.ini" \
-	   || test -f "${ARG1}/.install4j/i4jparams.conf" ;then
-		TWS_DIR="${ARG1}"
-	else
-		err_exit "directory '"${ARG1}"' is not a TWS installation"
-	fi
+	TWS_DIR="${ARG1}"
 else
 	case "$ARG1" in
 	*.jar | *.JAR)
@@ -127,6 +133,9 @@ else
 fi
 
 if test -n "$TWS_DIR"; then
+	if test -z "$(find "$TWS_DIR/" -maxdepth 1 -name  "*.jar")"; then
+		err_exit "directory '${TWS_DIR}' is not a TWS installation"
+	fi
 	getver_twsdir
 else
 	getver_shinstaller_grep
