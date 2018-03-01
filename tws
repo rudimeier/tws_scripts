@@ -25,13 +25,20 @@ PATCHED="0"
 LOOP="0"
 DRYRUN="0"
 
+MYNAME="$0"
 
 #### funcs
+
+_error()
+{
+    echo "error $MYNAME: $1" 1>&2
+    exit 1
+}
 
 _print_usage()
 {
 	cat <<EOF
-Usage: $0  [--gw] [--javaopts OPTIONS] [-p|--patched] [-c|--controller] \
+Usage: $0  [--gw] [--javaopts OPTIONS] [-c|--controller] \
 [--loop] [--tws TWS_DIR] [--test] [--] [TWS_HOME]
 EOF
 }
@@ -42,7 +49,7 @@ _parse_cmd()
 	TEMP=$(getopt -o cph \
 		--long gw,javaopts:,controller,patched,loop,tws:,test,help \
 		-n "$0" -- "$@" \
-		) || return 1
+		) || exit 1
 	eval set -- "$TEMP"
 
 	while true ; do
@@ -54,7 +61,7 @@ _parse_cmd()
 		-c|--controller)
 			CONTROLLER="1"; shift;;
 		-p|--patched)
-			PATCHED="1"; shift;;
+			_error "option --patched has been disabled";;
 		--loop)
 			LOOP="1"; shift 1;;
 		--tws)
@@ -124,7 +131,6 @@ _java_exec()
 {
 	if [ "${DRYRUN}" = "1" ] ;then
 		echo "CONTROLLER='${CONTROLLER}'"
-		echo "PATCHED='${PATCHED}'"
 		echo "IBController_DIR='${IBController_DIR}'"
 		echo "TWS_DIR='${TWS_DIR}'"
 		echo "TWS_HOME='${TWS_HOME}'"
@@ -144,12 +150,6 @@ if ! _parse_cmd "$@" ;then
 	exit 1
 fi
 
-
-
-if [ "${PATCHED}" = 1 ] ;then
-	TWS_DIR=${TWS_DIR}-patched
-fi
-
 if ! test -d  "${TWS_DIR}" ;then
 	echo "$0: invalid TWS_DIR: '${TWS_DIR}'" >&2
 	exit 1
@@ -167,9 +167,6 @@ cd "${TWS_HOME}" || exit 1
 for jarfile in ${TWS_DIR}/*.jar ;do
      CLASSPATH="${CLASSPATH}:${jarfile}"
 done
-#add path to (eventually existing) patches
-CLASSPATH=${TWS_DIR}/include_patches:${TWS_DIR}/jts:${CLASSPATH}
-
 
 if [ "${CONTROLLER}" = 1 ] ;then
 	temp=""
