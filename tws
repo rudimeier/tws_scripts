@@ -141,8 +141,26 @@ _java_exec()
 	fi
 }
 
+# We have to provide jts.ini with "SettingsDir" in case we don't use IBContoller
+_check_jts_ini()
+{
+	local jtsini="$TWS_HOME/jts.ini"
 
+	# provide CRLF line feeds
+	if ! test -f "$jtsini" || ! grep -q "^\[Communication\]" "$jtsini"; then
+		sed 's/$/\r/' >>"$jtsini" <<EOF
+[Communication]
+SettingsDir=$TWS_HOME
 
+EOF
+		return
+	fi
+
+	sed -i.bak \
+		-e '/^SettingsDir=/d' \
+		-e 's@\(\[Communication\]\)@\1\r\nSettingsDir='$TWS_HOME'@' \
+		"$jtsini"
+}
 
 #### here we go
 
@@ -161,6 +179,7 @@ echo "$$" > "$S_PIDFILE" || exit 1
 #getting classpath
 CLASSPATH="$TWS_DIR/*"
 
+_check_jts_ini
 if [ "${CONTROLLER}" = 1 ] ;then
 	temp=""
 	if ! temp="$(sed '/^IbDir=\.\r\{0,1\}$/!d' IBController.ini 2>/dev/null)" ;then
