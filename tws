@@ -156,12 +156,8 @@ fi
 
 cd "${TWS_HOME}" || exit 1
 
-
-
 #getting classpath
-for jarfile in ${TWS_DIR}/*.jar ;do
-     CLASSPATH="${CLASSPATH}:${jarfile}"
-done
+CLASSPATH="$TWS_DIR/*"
 
 if [ "${CONTROLLER}" = 1 ] ;then
 	temp=""
