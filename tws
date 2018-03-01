@@ -73,14 +73,13 @@ _parse_cmd()
 		--)
 			shift ; break ;;
 		*)
-			echo "$0: Internal error!" >&2; return 1;;
+			_error "internal getopt error";;
 		esac
 	done
 
 	#Remaining arguments:
 	if test "$#" -gt 1  ;then
-		echo "$0: bad usage" 2>&1
-		return 1
+		_error "bad usage"
 	elif test "$#" -gt 0  ;then
 		TWS_HOME="$1"
 	fi
@@ -146,17 +145,13 @@ _java_exec()
 
 #### here we go
 
-if ! _parse_cmd "$@" ;then
-	exit 1
-fi
+_parse_cmd "$@"
 
 if ! test -d  "${TWS_DIR}" ;then
-	echo "$0: invalid TWS_DIR: '${TWS_DIR}'" >&2
-	exit 1
+	_error "invalid TWS_DIR: '${TWS_DIR}'"
 fi
 if ! test -d  "${TWS_HOME}" ;then
-	echo "$0: invalid TWS_HOME: '${TWS_HOME}'" >&2
-	exit 1
+	_error "invalid TWS_HOME: '${TWS_HOME}'"
 fi
 
 cd "${TWS_HOME}" || exit 1
@@ -171,12 +166,10 @@ done
 if [ "${CONTROLLER}" = 1 ] ;then
 	temp=""
 	if ! temp="$(sed '/^IbDir=\.\r\{0,1\}$/!d' IBController.ini 2>/dev/null)" ;then
-		echo "$0: ${TWS_HOME}/IBController.ini not found" >&2;
-		exit 1
+		_error "${TWS_HOME}/IBController.ini not found"
 	fi
 	if test -z "${temp}" ;then
-		echo "$0: ${TWS_HOME}/IBController.ini must contain 'IbDir=.'" >&2;
-		exit 1
+		_error "${TWS_HOME}/IBController.ini must contain 'IbDir=.'"
 	fi
 	CLASSPATH="${IBController_DIR}/IBController.jar:${CLASSPATH}"
 	if [ "${GATEWAY}" = 1 ] ;then
