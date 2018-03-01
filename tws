@@ -89,6 +89,36 @@ _parse_cmd()
 	J_PIDFILE="${TWS_HOME}/tws-java.pid"
 }
 
+_kill_java()
+{
+	local jpid
+
+	if test -f "$J_PIDFILE"; then
+		jpid=$(<"$J_PIDFILE")
+		kill -TERM "$jpid"
+	fi
+}
+
+_atkill()
+{
+	local excode=$?
+
+	_kill_java
+
+	rm -f "$J_PIDFILE"
+	if test ${LOOP} = 0 ;then
+		echo_log "tws exit code $?"
+	else
+		echo_log "tws stop loop $excode"
+	fi
+	exit $excode
+}
+
+_atexit()
+{
+	rm -f "$S_PIDFILE"
+}
+
 echo_log()
 {
 	local now=`date "+%F %T"`
@@ -118,11 +148,11 @@ eval_loop()
 	else
 		local i="0";
 		while true; do
-			echo_log "start tws loop $i"
+			echo_log "tws start loop $i"
 			xeval "$@"
 			echo_log "tws exit code $? ... will be restarted"
 			i="$(( i+1 ))"
-			sleep 1
+			sleep 5
 		done
 	fi
 }
@@ -165,6 +195,10 @@ EOF
 #### here we go
 
 _parse_cmd "$@"
+
+trap _kill_java HUP
+trap _atkill TERM INT QUIT PIPE
+trap _atexit EXIT
 
 if ! test -d  "${TWS_DIR}" ;then
 	_error "invalid TWS_DIR: '${TWS_DIR}'"
