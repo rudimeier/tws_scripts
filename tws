@@ -84,7 +84,9 @@ _parse_cmd()
 		TWS_HOME="$1"
 	fi
 
-	LOGFILE="${TWS_HOME}/tws_restart.log"
+	LOGFILE="${TWS_HOME}/tws-restart.log"
+	S_PIDFILE="${TWS_HOME}/tws-script.pid"
+	J_PIDFILE="${TWS_HOME}/tws-java.pid"
 }
 
 echo_log()
@@ -97,15 +99,14 @@ xeval()
 {
 	local tws_pid
 	local tws_exit_code
-	local tws_pid_file="${TWS_HOME}/tws_java.pid"
 
 	"$@" &
 	tws_pid="$!"
-	echo  "${tws_pid}" > "${tws_pid_file}"
+	echo  "$tws_pid" > "$J_PIDFILE"
 	echo_log "tws started, PID ${tws_pid}"
 	wait "${tws_pid}"
 	tws_exit_code=$?
-	rm "${tws_pid_file}"
+	rm "$J_PIDFILE"
 	return $tws_exit_code
 }
 
@@ -155,6 +156,7 @@ if ! test -d  "${TWS_HOME}" ;then
 fi
 
 cd "${TWS_HOME}" || exit 1
+echo "$$" > "$S_PIDFILE" || exit 1
 
 #getting classpath
 CLASSPATH="$TWS_DIR/*"
