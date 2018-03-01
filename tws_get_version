@@ -41,6 +41,7 @@ getver_twsdir_run()
 	done
 	kill -9 "${TWS_PID}" &>/dev/null
 	tws_killed="$?"
+	unset "${TWS_PID}"
 
 	if test "$tws_killed" != "0"; then
 		err_exit "tws not running, maybe '${TWS_DIR}' is not a TWS installation"
@@ -104,7 +105,8 @@ getver_shinstaller_grep()
 ARG1="$(readlink -v -f "$1")" || err_exit "fatal"
 
 TDIR="$(mktemp -d -t twsdir.XXXX)" || err_exit "fatal"
-trap "rm -rf ${TDIR}" exit
+TWS_PID=""
+trap 'test -n "$TWS_PID" && kill -9 "$TWS_PID" &>/dev/null; rm -rf ${TDIR};' exit
 cd "${TDIR}" || err_exit "fatal"
 
 TWS_DIR=""
